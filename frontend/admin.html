@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Inventory Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    .card {
+      background: white;
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1, h2 {
+      color: #333;
+    }
+
+    input {
+      padding: 10px;
+      width: 80%;
+      max-width: 350px;
+      margin: 8px 0;
+      font-size: 15px;
+    }
+
+    button {
+      padding: 10px 16px;
+      margin: 6px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      color: white;
+    }
+
+    .green { background-color: #2ecc71; }
+    .red { background-color: #e74c3c; }
+    .purple { background-color: #8e44ad; }
+
+    a {
+      display: inline-block;
+      margin-top: 10px;
+      text-decoration: none;
+      color: #3498db;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <h1>Admin Inventory Management</h1>
+    <p>Use this page to add, update, and delete products from the inventory.</p>
+    <a href="customer.html">Go to Customer Page</a>
+
+    <div class="card">
+      <h2>Add New Product</h2>
+      <input type="text" id="newProductId" placeholder="Product ID">
+      <br>
+      <input type="text" id="newProductName" placeholder="Product Name">
+      <br>
+      <input type="number" id="newStock" placeholder="Stock">
+      <br>
+      <input type="number" id="newThreshold" placeholder="Threshold">
+      <br>
+      <button class="green" onclick="addProduct()">Add Product</button>
+    </div>
+
+    <div class="card">
+      <h2>Update Product</h2>
+      <input type="text" id="updateProductId" placeholder="Product ID">
+      <br>
+      <input type="text" id="updateProductName" placeholder="Updated Product Name">
+      <br>
+      <input type="number" id="updateStock" placeholder="Updated Stock">
+      <br>
+      <input type="number" id="updateThreshold" placeholder="Updated Threshold">
+      <br>
+      <button class="purple" onclick="updateProduct()">Update Product</button>
+    </div>
+
+    <div class="card">
+      <h2>Delete Product</h2>
+      <input type="text" id="deleteProductId" placeholder="Product ID">
+      <br>
+      <button class="red" onclick="deleteProduct()">Delete Product</button>
+    </div>
+
+  </div>
+
+  <script>
+    const BASE_URL = "https://3jjpewddsc.execute-api.eu-north-1.amazonaws.com/prod";
+
+    async function addProduct() {
+      const productId = document.getElementById("newProductId").value.trim();
+      const productName = document.getElementById("newProductName").value.trim();
+      const stock = document.getElementById("newStock").value;
+      const threshold = document.getElementById("newThreshold").value;
+
+      if (!productId || !productName || !stock || !threshold) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${BASE_URL}/products`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productId, productName, stock, threshold })
+        });
+
+        const data = await response.json();
+        alert(data.message || "Product added successfully.");
+      } catch (error) {
+        alert("Failed to add product.");
+        console.error(error);
+      }
+    }
+
+    async function updateProduct() {
+      const productId = document.getElementById("updateProductId").value.trim();
+      const productName = document.getElementById("updateProductName").value.trim();
+      const stock = document.getElementById("updateStock").value;
+      const threshold = document.getElementById("updateThreshold").value;
+
+      if (!productId || !productName || !stock || !threshold) {
+        alert("Please fill in all update fields.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${BASE_URL}/products/${productId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productName, stock, threshold })
+        });
+
+        const data = await response.json();
+        alert(data.message || "Product updated successfully.");
+      } catch (error) {
+        alert("Failed to update product.");
+        console.error(error);
+      }
+    }
+
+    async function deleteProduct() {
+      const productId = document.getElementById("deleteProductId").value.trim();
+
+      if (!productId) {
+        alert("Please enter a product ID to delete.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${BASE_URL}/products/${productId}`, {
+          method: "DELETE"
+        });
+
+        const data = await response.json();
+        alert(data.message || "Product deleted successfully.");
+      } catch (error) {
+        alert("Failed to delete product.");
+        console.error(error);
+      }
+    }
+  </script>
+</body>
+</html>

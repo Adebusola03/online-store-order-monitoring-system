@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Customer Store Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    .card {
+      background: white;
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1, h2 {
+      color: #333;
+    }
+
+    input, select {
+      padding: 10px;
+      width: 80%;
+      max-width: 350px;
+      margin: 8px 0;
+      font-size: 15px;
+    }
+
+    button {
+      padding: 10px 16px;
+      margin: 6px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      color: white;
+    }
+
+    .green { background-color: #2ecc71; }
+    .red { background-color: #e74c3c; }
+    .blue { background-color: #3498db; }
+    .orange { background-color: #f39c12; }
+
+    #response, #productOutput, #singleProductOutput {
+      margin-top: 15px;
+      font-weight: bold;
+      white-space: pre-wrap;
+      text-align: left;
+      display: inline-block;
+      max-width: 800px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+
+    a {
+      display: inline-block;
+      margin-top: 10px;
+      text-decoration: none;
+      color: #3498db;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <h1>Online Store Order Monitoring System</h1>
+    <p><strong>Welcome to our store.</strong> Place your order below and view available products.</p>
+    <a href="admin.html">Go to Admin Page</a>
+
+    <div class="card">
+      <h2>Place an Order</h2>
+      <label>Select Product</label><br>
+      <select id="productId">
+        <option value="P001">Laptop Bag</option>
+        <option value="P002">Wireless Mouse</option>
+        <option value="P003">USB Keyboard</option>
+        <option value="P004">Headphones</option>
+        <option value="P005">Laptop Stand</option>
+        <option value="P006">USB Flash Drive</option>
+        <option value="P007">Bluetooth Speaker</option>
+        <option value="P008">Web Camera</option>
+        <option value="P009">External Hard Drive</option>
+        <option value="P010">Gaming Mouse</option>
+      </select>
+      <br>
+
+      <label>Quantity</label><br>
+      <input type="number" id="quantity" min="1" placeholder="Enter quantity">
+      <br>
+
+      <button class="green" onclick="placeOrder()">Submit Order</button>
+      <button class="red" onclick="clearOrderForm()">Clear</button>
+
+      <p id="response"></p>
+    </div>
+
+    <div class="card">
+      <h2>View All Products</h2>
+      <button class="blue" onclick="getAllProducts()">Get All Products</button>
+      <div id="productOutput"></div>
+    </div>
+
+    <div class="card">
+      <h2>Get Product by ID</h2>
+      <input type="text" id="searchProductId" placeholder="Enter Product ID e.g. P001">
+      <br>
+      <button class="orange" onclick="getProductById()">Get Product</button>
+      <div id="singleProductOutput"></div>
+    </div>
+
+  </div>
+
+  <script>
+    const BASE_URL = "https://3jjpewddsc.execute-api.eu-north-1.amazonaws.com/prod";
+
+    async function placeOrder() {
+      const productId = document.getElementById("productId").value;
+      const quantity = document.getElementById("quantity").value;
+      const responseText = document.getElementById("response");
+
+      if (!quantity || Number(quantity) < 1) {
+        responseText.innerText = "Please enter a valid quantity.";
+        return;
+      }
+
+      responseText.innerText = "Processing order...";
+
+      try {
+        const response = await fetch(`${BASE_URL}/order`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productId, quantity })
+        });
+
+        const data = await response.json();
+        responseText.innerText = data.message
+          ? `${data.message}${data.remainingStock !== undefined ? ". Remaining stock: " + data.remainingStock : ""}`
+          : "Order processed successfully.";
+      } catch (error) {
+        responseText.innerText = "Order request failed.";
+        console.error(error);
+      }
+    }
+
+    function clearOrderForm() {
+      document.getElementById("quantity").value = "";
+      document.getElementById("response").innerText = "";
+    }
+
+    async function getAllProducts() {
+      const output = document.getElementById("productOutput");
+      output.innerHTML = "Loading products...";
+
+      try {
+        const response = await fetch(`${BASE_URL}/products`);
+        const data = await response.json();
+
+        let table = `
+          <table>
+            <tr>
+              <th>Product ID</th>
+              <th>Product Name</th>
+              <th>Stock</th>
+              <th>Threshold</th>
+            </tr>
+        `;
+
+        data.forEach(product => {
+          table += `
+            <tr>
+              <td>${product.productId}</td>
+              <td>${product.productName}</td>
+              <td>${product.stock}</td>
+              <td>${product.threshold}</td>
+            </tr>
+          `;
+        });
+
+        table += `</table>`;
+        output.innerHTML = table;
+      } catch (error) {
+        output.innerHTML = "Failed to fetch products.";
+        console.error(error);
+      }
+    }
+
+    async function getProductById() {
+      const productId = document.getElementById("searchProductId").value.trim();
+      const output = document.getElementById("singleProductOutput");
+
+      if (!productId) {
+        output.innerText = "Please enter a product ID.";
+        return;
+      }
+
+      output.innerText = "Loading product...";
+
+      try {
+        const response = await fetch(`${BASE_URL}/products/${productId}`);
+        const data = await response.json();
+
+        if (response.ok) {
+          output.innerText =
+`Product ID: ${data.productId}
+Product Name: ${data.productName}
+Stock: ${data.stock}
+Threshold: ${data.threshold}`;
+        } else {
+          output.innerText = data.message || "Product not found.";
+        }
+      } catch (error) {
+        output.innerText = "Failed to fetch product.";
+        console.error(error);
+      }
+    }
+  </script>
+</body>
+</html>
